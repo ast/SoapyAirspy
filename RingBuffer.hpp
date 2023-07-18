@@ -24,8 +24,8 @@ template <typename T> class RingBuffer {
   T *buffer_;
   const size_t capacity_;
 
-  cacheline_aligned std::atomic<size_t> read_pos_ = 0;
-  cacheline_aligned std::atomic<size_t> write_pos_ = 0;
+  cacheline_aligned std::atomic<size_t> read_pos_{0};
+  cacheline_aligned std::atomic<size_t> write_pos_{0};
 
   size_t read_pos_cached_ = 0;
   size_t write_pos_cached_ = 0;

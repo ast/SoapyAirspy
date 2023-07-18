@@ -7,6 +7,7 @@ cmake_minimum_required(VERSION 3.5)
 project(SoapyAirspy CXX)
 
 # This module needs c++17
+# Seems that SoapySDR 0.7 overrides this to C++11.
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -25,6 +26,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     -Wcast-align
     -Wconversion
     -Wstrict-aliasing=2
+    -faligned-new # allow alignas in C++11.
   )
 endif()
 

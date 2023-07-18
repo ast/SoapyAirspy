@@ -84,6 +84,7 @@ static int rx_callback_(airspy_transfer *transfer) {
 }
 
 int SoapyAirspy::rx_callback(airspy_transfer *transfer) {
+  // TODO: fix constant
   const auto timeout = std::chrono::microseconds(250000);
 
   const auto to_copy =

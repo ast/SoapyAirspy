@@ -39,6 +39,7 @@ static std::vector<SoapySDR::Kwargs> findAirspy(const SoapySDR::Kwargs &args) {
                  asVersion.revision);
 
   uint64_t serials[MAX_DEVICES];
+  
   int count = airspy_list_devices(serials, MAX_DEVICES);
   if (count < 0) {
     SoapySDR::logf(SOAPY_SDR_ERROR, "libairspy error listing devices");
@@ -71,6 +72,7 @@ static std::vector<SoapySDR::Kwargs> findAirspy(const SoapySDR::Kwargs &args) {
 
     results.push_back(soapyInfo);
   }
+
   return results;
 }
 

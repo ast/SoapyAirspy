@@ -27,12 +27,11 @@
 #include "airspy_fir_kernels.hpp"
 
 SoapyAirspy::SoapyAirspy(const SoapySDR::Kwargs &args)
-    : dev_(nullptr), sampleSize_(0), sampleRate_(0), centerFrequency_(0),
-      currentBandwidth_(0), gains_(Gains::LINEARITY), rfBias_(false),
-      bitPack_(false), ringbuffer_(1 << 22) {
+    : dev_(nullptr), sampleSize_(0), gains_(Gains::LINEARITY), rfBias_(false),
+      bitPack_(false), sampleRate_(0), centerFrequency_(0),
+      currentBandwidth_(0), ringbuffer_(1 << 22) {
 
   // TODO: make ringbuffer size configurable
-
   int ret;
 
   SoapySDR::setLogLevel(SOAPY_SDR_DEBUG);
@@ -585,7 +584,6 @@ void SoapyAirspy::setBandwidth(const int direction, const size_t channel,
 
     kernel = KERNEL_16_110;
     kernel_size = KERNEL_16_110_LEN;
-
   }
 
   ret = airspy_set_conversion_filter_float32(dev_, kernel, kernel_size);
@@ -655,20 +653,20 @@ SoapySDR::ArgInfoList SoapyAirspy::getSettingInfo(void) const {
   bitPackingArg.value = "false";
   bitPackingArg.name = "Bit pack";
   bitPackingArg.description = "Enable packing 4 12-bit samples into 3 16-bit "
-                              "words for 25% less USB trafic.";
+                              "words for 25% less USB traffic.";
   bitPackingArg.type = SoapySDR::ArgInfo::BOOL;
 
   setArgs.push_back(bitPackingArg);
 
   // bitpack
-  SoapySDR::ArgInfo gainModeArg;
-  gainModeArg.key = "gainmode";
-  gainModeArg.value = "linearity";
-  gainModeArg.name = "Gain Mode";
-  gainModeArg.description = "linearity | sensitivity | manual";
-  gainModeArg.type = SoapySDR::ArgInfo::INT;
+  SoapySDR::ArgInfo gainsArg;
+  gainsArg.key = "gains";
+  gainsArg.value = "linearity";
+  gainsArg.name = "Gain Mode";
+  gainsArg.description = "linearity | sensitivity | manual";
+  gainsArg.type = SoapySDR::ArgInfo::STRING;
 
-  setArgs.push_back(gainModeArg);
+  setArgs.push_back(gainsArg);
 
   return setArgs;
 }
@@ -732,6 +730,7 @@ std::string SoapyAirspy::readSetting(const std::string &key) const {
     }
     }
   }
+
   SoapySDR::logf(SOAPY_SDR_ERROR, "readSetting() unknown key: %s", key.c_str());
   return "";
 }
