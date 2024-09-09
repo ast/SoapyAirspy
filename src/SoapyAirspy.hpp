@@ -39,11 +39,18 @@
 #include "RingBuffer.hpp"
 
 #define MAX_DEVICES 32
-#define SOAPY_AIRSPY_STREAM_MTU 65536
+// 65536
+#define SOAPY_AIRSPY_STREAM_MTU (1 << 16)
+
+class SoapySDR::Stream {
+public:
+  virtual ~Stream(void) {}
+};
 
 class SoapyAirspy : public SoapySDR::Device {
   enum class Gains { LINEARITY, SENSITIVITY, MANUAL };
 
+  // Usable bandwidth, fraction of the sample rate
   const double BANDWIDTH_FACTOR = 0.75;
 
   // Device handle
@@ -165,11 +172,12 @@ public:
   bool hasGainMode(const int direction, const size_t channel) const override;
 
   void setGainMode(const int direction, const size_t channel,
-                   const bool automatic);
+                   const bool automatic) override;
 
   bool getGainMode(const int direction, const size_t channel) const override;
 
-  void setGain(const int direction, const size_t channel, const double value);
+  void setGain(const int direction, const size_t channel,
+               const double value) override;
 
   void setGain(const int direction, const size_t channel,
                const std::string &name, const double value) override;

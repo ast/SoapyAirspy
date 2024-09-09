@@ -1,13 +1,8 @@
+// Copyright 2024 SM6WJM
+
 #pragma once
 
-#include <cstddef>
-#include <cstdint>
-#include <sys/mman.h>
-
-#include <unistd.h>
-
 #include <atomic>
-#include <cassert>
 #include <chrono>
 #include <condition_variable>
 #include <cstring>
@@ -15,6 +10,11 @@
 #include <iostream>
 #include <mutex>
 #include <stdexcept>
+
+#include <cstddef>
+#include <cstdint>
+#include <sys/mman.h>
+#include <unistd.h>
 
 // The Cortex-A7 in the RPi3 has a 64-byte cache line size (L2 cache)
 #define cacheline_aligned alignas(64)
@@ -69,13 +69,13 @@ template <typename T> class RingBuffer {
     // be reused.
     int mem_fd = memfd_create("soapy_ring_buffer", 0);
     if (mem_fd == -1) {
-      // TODO: add excact error
+      // TODO: add exact error
       throw std::runtime_error("Could not create memfd: " +
                                std::string(strerror(errno)));
     }
 
     // Truncate to size
-    const int ftruncate_res = ftruncate(mem_fd, size);
+    const int ftruncate_res = ftruncate(mem_fd, static_cast<__off_t>(size));
     if (ftruncate_res == -1) {
       throw std::runtime_error("Could not ftruncate memfd: " +
                                std::string(strerror(errno)));
@@ -101,8 +101,8 @@ template <typename T> class RingBuffer {
 
     // Map the memfd to the second half of the buffer
     // The double cast is because of pointer arithmetic
-    // TODO: fix this cast into a macro or something
-    void *addr_hint_2 = (void *)((uint8_t *)buffer_1 + size);
+    void *addr_hint_2 =
+        static_cast<void *>(static_cast<uint8_t *>(buffer_1) + size);
     const void *buffer_2 = mmap(addr_hint_2, size, PROT_READ | PROT_WRITE,
                                 MAP_SHARED | MAP_FIXED, mem_fd, 0);
 
@@ -204,7 +204,8 @@ public:
       // We have enough elements, no need to wait
       const auto consumed = callback(read_ptr(), avail);
       consume(consumed);
-      return consumed;
+
+      return static_cast<ssize_t>(consumed);
     }
 
     // Else wait for more elements
@@ -217,7 +218,8 @@ public:
       // Ok, we have enough data
       const auto consumed = callback(read_ptr(), avail);
       consume(consumed);
-      return consumed;
+
+      return static_cast<ssize_t>(consumed);
     } else {
       // We timed out
       return -1;
@@ -234,7 +236,8 @@ public:
       // Ok, we have enough space, not need to wait
       const auto produced = callback(write_ptr(), free);
       produce(produced);
-      return produced;
+
+      return static_cast<ssize_t>(produced);
     }
 
     // Else wait for enough space to be available
@@ -247,14 +250,15 @@ public:
       // Ok, we have enough data
       const auto produced = callback(write_ptr(), free);
       produce(produced);
-      return produced;
+
+      return static_cast<ssize_t>(produced);
     } else {
       // We timed out
       return -1;
     }
   }
 
-  RingBuffer(size_t capacity)
+  explicit RingBuffer(size_t capacity)
       : buffer_(map_mirror(capacity * sizeof(T))), capacity_(capacity) {}
 
   virtual ~RingBuffer() { unmap_mirror(buffer_, capacity_ * sizeof(T)); };

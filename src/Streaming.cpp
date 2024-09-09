@@ -24,13 +24,11 @@
 
 #include "SoapyAirspy.hpp"
 
-#include <SoapySDR/ConverterRegistry.hpp>
 #include <SoapySDR/Formats.hpp>
 #include <SoapySDR/Logger.hpp>
-#include <SoapySDR/Time.hpp>
 
 #include <algorithm>
-#include <chrono>
+#include <cassert>
 
 #define SOAPY_NATIVE_FORMAT SOAPY_SDR_CS16
 
@@ -38,6 +36,10 @@ std::vector<std::string>
 SoapyAirspy::getStreamFormats(const int direction, const size_t channel) const {
 
   std::vector<std::string> formats;
+
+  // Log debug
+  SoapySDR::logf(SOAPY_SDR_DEBUG, "getStreamFormats(%d, %d)", direction,
+                 channel);
 
   if (direction == SOAPY_SDR_RX and channel == 0) {
     formats.push_back(SOAPY_SDR_CS16);
@@ -50,6 +52,11 @@ SoapyAirspy::getStreamFormats(const int direction, const size_t channel) const {
 std::string SoapyAirspy::getNativeStreamFormat(const int direction,
                                                const size_t channel,
                                                double &fullScale) const {
+
+  // Log debug
+  SoapySDR::logf(SOAPY_SDR_DEBUG, "getNativeStreamFormat(%d, %d)", direction,
+                 channel);
+
   if (direction != SOAPY_SDR_RX or channel != 0) {
     SoapySDR::logf(SOAPY_SDR_ERROR,
                    "getNativeStreamFormat invalid direction or channel");
@@ -66,8 +73,12 @@ SoapyAirspy::getStreamArgsInfo(const int direction,
 
   SoapySDR::ArgInfoList streamArgs;
 
+  // Log debug
+  SoapySDR::logf(SOAPY_SDR_DEBUG, "getStreamArgsInfo(%d, %d)", direction,
+                 channel);
+
   if (direction != SOAPY_SDR_RX and channel != 0) {
-    SoapySDR::logf(SOAPY_SDR_DEBUG, "getSteamArgsInfo = %d %d", direction,
+    SoapySDR::logf(SOAPY_SDR_WARNING, "getSteamArgsInfo = %d %d", direction,
                    channel);
   }
 
@@ -117,10 +128,14 @@ SoapySDR::Stream *SoapyAirspy::setupStream(const int direction,
                                            const std::string &format,
                                            const std::vector<size_t> &channels,
                                            const SoapySDR::Kwargs &args) {
-  int ret;
+  int ret = 0;
+
+  // Log debug
+  SoapySDR::logf(SOAPY_SDR_DEBUG, "setupStream(%d, %s, %d, %d)", direction,
+                 format.c_str(), channels.size(), args.size());
 
   if (direction != SOAPY_SDR_RX) {
-    SoapySDR::logf(SOAPY_SDR_ERROR,
+    SoapySDR::logf(SOAPY_SDR_WARNING,
                    "SoapyAirspy::setupStream(%d, %s, %d, %d) -"
                    " direction must be RX",
                    direction, format.c_str(), channels.size(), args.size());
@@ -132,6 +147,7 @@ SoapySDR::Stream *SoapyAirspy::setupStream(const int direction,
     throw std::runtime_error("setupStream invalid channel selection");
   }
 
+  // Default sample type
   airspy_sample_type sampleType = AIRSPY_SAMPLE_INT16_IQ;
 
   // Check the format
@@ -158,17 +174,20 @@ SoapySDR::Stream *SoapyAirspy::setupStream(const int direction,
     return nullptr;
   }
 
-  // TODO: better cast
-  return (SoapySDR::Stream *)this;
+  // Create the stream object
+  SoapySDR::Stream *stream = new SoapySDR::Stream();
+
+  return stream;
 }
 
 void SoapyAirspy::closeStream(SoapySDR::Stream *stream) {
 
   int ret = 0;
 
-  if (stream != (SoapySDR::Stream *)this) {
-    SoapySDR::logf(SOAPY_SDR_DEBUG, "stream != this");
-  }
+  // Log debug
+  SoapySDR::logf(SOAPY_SDR_DEBUG, "SoapyAirspy::closeStream()");
+
+  assert(dev_ != nullptr);
 
   if (dev_ == nullptr) {
     SoapySDR::logf(SOAPY_SDR_ERROR, "dev_ == nullptr", ret);
@@ -184,36 +203,42 @@ void SoapyAirspy::closeStream(SoapySDR::Stream *stream) {
   if (ret != AIRSPY_SUCCESS) {
     SoapySDR::logf(SOAPY_SDR_ERROR, "airspy_close() = %d", ret);
   }
+
   dev_ = nullptr;
 
   ringbuffer_.clear();
+
+  // Delete stream
+  delete stream;
 }
 
 size_t SoapyAirspy::getStreamMTU(SoapySDR::Stream *stream) const {
-  if (stream != (SoapySDR::Stream const *)this) {
-    SoapySDR::logf(SOAPY_SDR_DEBUG, "stream != this");
-  }
+
+  (void)stream;
+
+  // Log debug
+  SoapySDR::logf(SOAPY_SDR_DEBUG, "SoapyAirspy:::getStreamMTU()");
 
   return SOAPY_AIRSPY_STREAM_MTU;
 }
 
 int SoapyAirspy::activateStream(SoapySDR::Stream *stream, const int flags,
                                 const long long timeNs, const size_t numElems) {
-  int ret;
 
-  if (stream != (SoapySDR::Stream *)this) {
-    SoapySDR::logf(SOAPY_SDR_DEBUG, "stream != this");
-  }
+  (void)stream;
 
-  if (flags != 0) {
-    SoapySDR::logf(SOAPY_SDR_ERROR,
-                   "SoapyAirspy::activateStream() - flags not supported");
-  }
+  int ret = 0;
 
+  // Log debug
   SoapySDR::logf(
       SOAPY_SDR_DEBUG,
       "SoapyAirspy::activateStream() flags=%d timeNs=%lld numElems=%d", flags,
       timeNs, numElems);
+
+  if (flags != 0) {
+    SoapySDR::logf(SOAPY_SDR_WARNING,
+                   "SoapyAirspy::activateStream() - flags not supported");
+  }
 
   // Clear ringbuffer of old samples
   ringbuffer_.clear();
@@ -230,18 +255,16 @@ int SoapyAirspy::activateStream(SoapySDR::Stream *stream, const int flags,
 int SoapyAirspy::deactivateStream(SoapySDR::Stream *stream, const int flags,
                                   const long long timeNs) {
 
+  (void)stream;
+
   int ret = 0;
 
-  if (stream != (SoapySDR::Stream *)this) {
-    SoapySDR::logf(SOAPY_SDR_DEBUG, "stream != this");
-  }
-
   SoapySDR::logf(SOAPY_SDR_DEBUG,
-                 "SoapyAirspy::deactivateStream: flags=%d, timeNs=%lld", flags,
+                 "SoapyAirspy::deactivateStream(flags=%d, timeNs=%lld)", flags,
                  timeNs);
 
   if (flags != 0) {
-    SoapySDR::logf(SOAPY_SDR_DEBUG,
+    SoapySDR::logf(SOAPY_SDR_WARNING,
                    "SoapyAirspy::deactivateStream() - flags not supported");
   }
 
@@ -258,6 +281,10 @@ int SoapyAirspy::deactivateStream(SoapySDR::Stream *stream, const int flags,
 int SoapyAirspy::readStream(SoapySDR::Stream *stream, void *const *buffs,
                             const size_t numElems, int &flags,
                             long long &timeNs, const long timeoutUs) {
+
+  // Log debug
+  SoapySDR::logf(SOAPY_SDR_DEBUG, "readStream(%d, %d, %d, %d)", numElems, flags,
+                 timeNs, timeoutUs);
 
   // Some applications require this. We don't use flags.
   flags = 0;

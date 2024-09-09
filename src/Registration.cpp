@@ -25,12 +25,23 @@
 #include "SoapyAirspy.hpp"
 #include <SoapySDR/Registry.hpp>
 #include <algorithm>
-#include <iomanip>
-#include <iostream>
+
+#include <fmt/core.h>
 
 static std::vector<SoapySDR::Kwargs> findAirspy(const SoapySDR::Kwargs &args) {
+
   std::vector<SoapySDR::Kwargs> results;
 
+  // Log debug
+  SoapySDR::logf(SOAPY_SDR_DEBUG, "findAirspy()");
+
+  // Log args
+  for (const auto &arg : args) {
+    SoapySDR::logf(SOAPY_SDR_DEBUG, "  %s: %s", arg.first.c_str(),
+                   arg.second.c_str());
+  }
+
+  // Get library version
   airspy_lib_version_t asVersion;
   airspy_lib_version(&asVersion);
 
@@ -39,7 +50,7 @@ static std::vector<SoapySDR::Kwargs> findAirspy(const SoapySDR::Kwargs &args) {
                  asVersion.revision);
 
   uint64_t serials[MAX_DEVICES];
-  
+
   int count = airspy_list_devices(serials, MAX_DEVICES);
   if (count < 0) {
     SoapySDR::logf(SOAPY_SDR_ERROR, "libairspy error listing devices");
@@ -49,20 +60,15 @@ static std::vector<SoapySDR::Kwargs> findAirspy(const SoapySDR::Kwargs &args) {
   SoapySDR::logf(SOAPY_SDR_DEBUG, "%d AirSpy boards found.", count);
 
   for (int i = 0; i < count; i++) {
-    std::stringstream serialstr;
-
-    serialstr.str("");
-    // Length of serial is 64 bits.
-    serialstr << std::setfill('0') << std::setw(16) << std::hex << serials[i];
-
-    SoapySDR::logf(SOAPY_SDR_DEBUG, "Serial %s", serialstr.str().c_str());
+    // Format the serial number as a 64-bit hexadecimal string with leading
+    // zeros
+    std::string serialstr = fmt::format("{:016x}", serials[i]);
 
     SoapySDR::Kwargs soapyInfo;
+    soapyInfo["label"] = fmt::format("AirSpy One [{}]", serialstr);
+    soapyInfo["serial"] = serialstr;
 
-    soapyInfo["label"] = "AirSpy One [" + serialstr.str() + "]";
-    soapyInfo["serial"] = serialstr.str();
-
-    if (args.count("serial") != 0) {
+    if (args.count("serial")) {
       if (args.at("serial") != soapyInfo.at("serial")) {
         continue;
       }
@@ -77,6 +83,16 @@ static std::vector<SoapySDR::Kwargs> findAirspy(const SoapySDR::Kwargs &args) {
 }
 
 static SoapySDR::Device *makeAirspy(const SoapySDR::Kwargs &args) {
+
+  // Log debug
+  SoapySDR::logf(SOAPY_SDR_DEBUG, "makeAirspy()");
+
+  // Log args
+  for (const auto &arg : args) {
+    SoapySDR::logf(SOAPY_SDR_DEBUG, "  %s: %s", arg.first.c_str(),
+                   arg.second.c_str());
+  }
+
   return new SoapyAirspy(args);
 }
 

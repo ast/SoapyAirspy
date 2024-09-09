@@ -1,0 +1,6 @@
+# Copyright SM6WJM 2024
+
+# The format is this:
+# [error id]:[filename]:[line]
+
+# *:*/build/*

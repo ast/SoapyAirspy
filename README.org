@@ -1,28 +1,34 @@
-# Soapy SDR plugin for Airspy R2 and Mini
+* Soapy SDR plugin for Airspy R2 and Mini
 
-## Building
+** Building
 
 Make sure you have SoapySDR installed and do something like this:
 
+#+begin_src bash
     mkdir build
     cd build
     cmake ..
     make
-    sudo install
+    sudo make install
+#+end_src
 
-## Using
+** Using
 
 Use this device string in GQRX:
 
-    soapy=0,driver=airspy
+#+begin_src
+  soapy=0,driver=airspy
+#+end_src
 
 More settings are available:
 
+#+begin_src
     soapy=0,driver=airspy,biastee=true|false,gains=linearity|sensitivity|manual
+#+end_src
 
-## This branch (v2)
+** This branch (v2)
 
-**This branch is work in progress**.
+*This branch is work in progress.*
 
 The code is significantly simpler than the previous version and most
 likely it has better performance. Quite a few bugs have been fixed,
@@ -31,17 +37,17 @@ them! :-)
 
 I have tested this with GQRX with good results.
 
-## Support me
+** Support me
 
 Please consider sponsoring me on GitHub if you enjoy this
 work. Everything I earn through donations will go to families and
 children of Ukraine who have lost their homes because of the war.
 
-## Dependencies
+** Dependencies
 
-* SoapySDR - https://github.com/pothosware/SoapySDR/wiki
-* libairspy - https://github.com/airspy/host/wiki
+- libairspy - https://github.com/airspy/host/wiki
+- SoapySDR - https://github.com/pothosware/SoapySDR/wiki
 
-## Documentation
+** Documentation
 
-* https://github.com/pothosware/SoapyAirspy/wiki
+- https://github.com/pothosware/SoapyAirspy/wiki
